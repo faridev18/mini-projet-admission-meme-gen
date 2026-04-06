@@ -3,6 +3,7 @@ import Layout from "@/components/Layout";
 import Home from "@/pages/Home";
 import Editor from "@/pages/Editor";
 import MyMemes from "@/pages/MyMemes";
+import { Toaster } from "@/components/ui/sonner";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/editor" element={<Editor />} />
         <Route path="/my-memes" element={<MyMemes />} />
       </Routes>
+      <Toaster richColors position="bottom-right" />
     </Layout>
   );
 }

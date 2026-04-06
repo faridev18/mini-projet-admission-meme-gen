@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router";
 import { useAuth } from "@/context/AuthContext";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,7 +37,6 @@ export default function Editor() {
   const { user, loginWithGoogle } = useAuth();
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
-  const navigate = useNavigate();
 
   const [image, setImage] = useState(null);
   const [textBlocks, setTextBlocks] = useState([]);
@@ -300,10 +299,11 @@ export default function Editor() {
         createdAt: serverTimestamp(),
       });
 
-      navigate("/my-memes");
+      toast.success("Mème sauvegardé !");
+      setSelectedId(prevSelected);
     } catch (err) {
       console.error("Erreur lors de la sauvegarde:", err);
-      alert("Erreur lors de la sauvegarde. Vérifiez votre connexion.");
+      toast.error("Erreur lors de la sauvegarde. Vérifiez votre connexion.");
       setSelectedId(prevSelected);
     } finally {
       setSaving(false);
