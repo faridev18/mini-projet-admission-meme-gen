@@ -1,9 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/context/AuthContext";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { storage, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -286,14 +285,7 @@ export default function Editor() {
 
     try {
       const canvas = canvasRef.current;
-      const blob = await new Promise((resolve) =>
-        canvas.toBlob(resolve, "image/png")
-      );
-
-      const fileName = `memes/${user.uid}/${Date.now()}.png`;
-      const storageRef = ref(storage, fileName);
-      await uploadBytes(storageRef, blob);
-      const imageUrl = await getDownloadURL(storageRef);
+      const imageData = canvas.toDataURL("image/jpeg", 0.7);
 
       const texts = textBlocks
         .map((b) => b.text)
@@ -302,7 +294,7 @@ export default function Editor() {
 
       await addDoc(collection(db, "memes"), {
         userId: user.uid,
-        imageUrl,
+        imageData,
         topText: texts,
         bottomText: "",
         createdAt: serverTimestamp(),

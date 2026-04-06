@@ -9,8 +9,7 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import { ref, deleteObject } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -52,14 +51,6 @@ export default function MyMemes() {
     if (!confirm("Supprimer ce mème ?")) return;
 
     try {
-      // Delete from Storage
-      const imageRef = ref(storage, `memes/${user.uid}/${meme.imageUrl.split("%2F").pop().split("?")[0]}`);
-      try {
-        await deleteObject(imageRef);
-      } catch {
-        // Image may already be deleted
-      }
-      // Delete from Firestore
       await deleteDoc(doc(db, "memes", meme.id));
     } catch (err) {
       console.error("Erreur suppression:", err);
@@ -68,26 +59,28 @@ export default function MyMemes() {
 
   const downloadMeme = (meme) => {
     const link = document.createElement("a");
-    link.href = meme.imageUrl;
+    link.href = meme.imageData;
     link.download = "meme.png";
-    link.target = "_blank";
     link.click();
   };
 
   const shareMeme = async (meme) => {
-    if (navigator.share) {
-      try {
+    try {
+      const res = await fetch(meme.imageData);
+      const blob = await res.blob();
+      if (navigator.share) {
         await navigator.share({
+          files: [new File([blob], "meme.png", { type: "image/png" })],
           title: "Mon mème",
-          text: [meme.topText, meme.bottomText].filter(Boolean).join(" - "),
-          url: meme.imageUrl,
         });
-      } catch {
-        // User cancelled
+      } else {
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type]: blob }),
+        ]);
+        alert("Mème copié dans le presse-papiers !");
       }
-    } else {
-      await navigator.clipboard.writeText(meme.imageUrl);
-      alert("Lien copié dans le presse-papiers !");
+    } catch {
+      // cancelled
     }
   };
 
@@ -141,7 +134,7 @@ export default function MyMemes() {
                 <DialogTrigger asChild>
                   <button className="w-full cursor-pointer">
                     <img
-                      src={meme.imageUrl}
+                      src={meme.imageData}
                       alt={meme.topText || "Mème"}
                       className="aspect-square w-full object-cover transition-transform group-hover:scale-105"
                       loading="lazy"
@@ -150,7 +143,7 @@ export default function MyMemes() {
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl p-2">
                   <img
-                    src={meme.imageUrl}
+                    src={meme.imageData}
                     alt={meme.topText || "Mème"}
                     className="w-full rounded"
                   />
