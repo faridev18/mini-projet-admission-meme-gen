@@ -198,6 +198,12 @@ export default function Editor() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image trop lourde. Maximum 5 Mo.");
+      e.target.value = "";
+      return;
+    }
+
     const img = new Image();
     img.onload = () => {
       const maxDim = 800;
@@ -284,7 +290,21 @@ export default function Editor() {
 
     try {
       const canvas = canvasRef.current;
-      const imageData = canvas.toDataURL("image/jpeg", 0.7);
+
+      // Compress until under 900 KB (base64 ~33% overhead → target ~680 KB binary)
+      const MAX_BYTES = 900_000;
+      let quality = 0.8;
+      let imageData = canvas.toDataURL("image/jpeg", quality);
+      while (imageData.length > MAX_BYTES && quality > 0.1) {
+        quality = Math.round((quality - 0.1) * 10) / 10;
+        imageData = canvas.toDataURL("image/jpeg", quality);
+      }
+      if (imageData.length > MAX_BYTES) {
+        toast.error("Image trop grande même après compression. Essayez une image plus petite.");
+        setSaving(false);
+        setSelectedId(prevSelected);
+        return;
+      }
 
       const texts = textBlocks
         .map((b) => b.text)
